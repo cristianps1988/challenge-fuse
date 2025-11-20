@@ -10,7 +10,9 @@ const config: Config = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/frontend/$1',
+    '^@/backend/(.*)$': '<rootDir>/backend/$1',
+    '^@/frontend/(.*)$': '<rootDir>/frontend/$1',
+    '^@/(.*)$': '<rootDir>/$1',
   },
   testMatch: [
     '**/__tests__/**/*.[jt]s?(x)',
@@ -25,6 +27,8 @@ const config: Config = {
     '!**/__tests__/**',
     '!**/node_modules/**',
     '!frontend/components/ui/**',
+    '!**/*.constants.ts',
+    '!**/errors/**/*.ts',
   ],
   coverageThreshold: {
     global: {
