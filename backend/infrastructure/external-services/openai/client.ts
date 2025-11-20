@@ -1,13 +1,10 @@
 import OpenAI from 'openai';
-import { logger } from '@/backend/infrastructure/logger';
+import { getEnv } from '@/backend/infrastructure/config/env';
 
-if (!process.env.OPENAI_API_KEY) {
-  logger.error('OPENAI_API_KEY environment variable is not set');
-  throw new Error('OPENAI_API_KEY environment variable is required');
-}
+const { OPENAI_API_KEY } = getEnv();
 
 export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: OPENAI_API_KEY || '',
 });
 
 export const OPENAI_MODEL = 'gpt-4o';

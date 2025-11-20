@@ -13,6 +13,7 @@ import { CalculateMetricsUseCase } from '@/backend/application/use-cases/Calcula
 import { UpdateThresholdsUseCase } from '@/backend/application/use-cases/UpdateThresholds/UpdateThresholds.UseCase';
 import { PipelineOrchestratorService } from '@/backend/application/services/PipelineOrchestrator.Service';
 import { LearningLoopService } from '@/backend/application/services/LearningLoop.Service';
+import { DocumentController } from '@/backend/infrastructure/api/controllers/Document.Controller';
 import { logger } from '@/backend/infrastructure/logger';
 
 class Container {
@@ -83,6 +84,34 @@ class Container {
 
   getCorrectionLog(): JsonlCorrectionLog {
     return this.correctionLog;
+  }
+
+  getDocumentRepository() {
+    return this.documentRepository;
+  }
+
+  getExtractionRepository() {
+    return this.extractionRepository;
+  }
+
+  getCorrectionRepository() {
+    return this.correctionRepository;
+  }
+
+  getThresholdRepository() {
+    return this.thresholdRepository;
+  }
+
+  getStorageService() {
+    return this.storageService;
+  }
+
+  getDocumentController(): DocumentController {
+    return new DocumentController(
+      this.getProcessDocumentUseCase(),
+      this.getGetDocumentUseCase(),
+      this.getCorrectDocumentUseCase()
+    );
   }
 }
 

@@ -2,9 +2,11 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { logger } from '@/backend/infrastructure/logger';
+import { getEnv } from '@/backend/infrastructure/config/env';
 
-const DATABASE_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'app.db');
-const DATA_DIR = path.dirname(DATABASE_PATH);
+const { DATABASE_PATH, NODE_ENV } = getEnv();
+
+const DATA_DIR = path.dirname(DATABASE_PATH || path.join(process.cwd(), 'data', 'app.db'));
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -12,7 +14,7 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 export const db = new Database(DATABASE_PATH, {
-  verbose: process.env.NODE_ENV === 'development' ? (message: unknown) => logger.debug(String(message)) : undefined,
+  verbose: NODE_ENV === 'development' ? (message: unknown) => logger.debug(String(message)) : undefined,
 });
 
 db.pragma('journal_mode = WAL');

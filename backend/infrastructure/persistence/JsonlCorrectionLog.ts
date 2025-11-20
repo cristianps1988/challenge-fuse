@@ -1,8 +1,11 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { logger } from '@/backend/infrastructure/logger';
+import { getEnv } from '@/backend/infrastructure/config/env';
 
-const CORRECTIONS_LOG_PATH = process.env.CORRECTIONS_LOG_PATH || path.join(process.cwd(), 'data', 'corrections.jsonl');
+const { CORRECTIONS_LOG_PATH: envCorrectionLogPath } = getEnv();
+
+const CORRECTIONS_LOG_PATH = envCorrectionLogPath || path.join(process.cwd(), 'data', 'corrections.jsonl');
 
 interface CorrectionLogEntry {
   correctionId: string;

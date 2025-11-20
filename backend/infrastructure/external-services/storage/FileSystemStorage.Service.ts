@@ -2,8 +2,9 @@ import type { StorageService } from '@/backend/application/ports/StorageService'
 import fs from 'fs/promises';
 import path from 'path';
 import { logger } from '@/backend/infrastructure/logger';
+import { getEnv } from '@/backend/infrastructure/config/env';
 
-const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(process.cwd(), 'data', 'uploads');
+const { UPLOADS_DIR } = getEnv();
 
 export class FileSystemStorageService implements StorageService {
   constructor() {
@@ -12,7 +13,7 @@ export class FileSystemStorageService implements StorageService {
 
   private async ensureUploadsDirectory(): Promise<void> {
     try {
-      await fs.mkdir(UPLOADS_DIR, { recursive: true });
+      await fs.mkdir(UPLOADS_DIR || path.join(process.cwd(), 'data', 'uploads'), { recursive: true });
       logger.info('Uploads directory ready', { path: UPLOADS_DIR });
     } catch (error) {
       logger.error('Failed to create uploads directory', {
@@ -28,7 +29,7 @@ export class FileSystemStorageService implements StorageService {
       const sanitizedFileName = this.sanitizeFileName(fileName);
       const timestamp = Date.now();
       const uniqueFileName = `${timestamp}-${sanitizedFileName}`;
-      const filePath = path.join(UPLOADS_DIR, uniqueFileName);
+      const filePath = path.join(UPLOADS_DIR || path.join(process.cwd(), 'data', 'uploads'), uniqueFileName);
 
       await fs.writeFile(filePath, fileBuffer);
 
