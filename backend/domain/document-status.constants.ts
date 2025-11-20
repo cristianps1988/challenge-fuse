@@ -8,6 +8,8 @@ export const DocumentStatus = {
 
 export type DocumentStatusValue = typeof DocumentStatus[keyof typeof DocumentStatus];
 
+export const DOCUMENT_STATUS = DocumentStatus;
+
 export const StatusConfig: Record<DocumentStatusValue, { label: string; variant: string }> = {
   [DocumentStatus.PROCESSING]: { label: 'Processing', variant: 'default' },
   [DocumentStatus.COMPLETED]: { label: 'Completed', variant: 'success' },

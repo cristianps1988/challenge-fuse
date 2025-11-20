@@ -8,6 +8,8 @@ export const DocumentType = {
 
 export type DocumentTypeValue = typeof DocumentType[keyof typeof DocumentType];
 
+export const DOCUMENT_TYPES = Object.values(DocumentType);
+
 export const DocumentTypeLabel: Record<DocumentTypeValue, string> = {
   [DocumentType.BANK_STATEMENT]: 'Bank Statement',
   [DocumentType.GOVERNMENT_ID]: 'Government ID',

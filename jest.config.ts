@@ -18,6 +18,9 @@ const config: Config = {
     '**/__tests__/**/*.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)',
+  ],
   collectCoverageFrom: [
     'frontend/**/*.{js,jsx,ts,tsx}',
     'backend/**/*.{js,jsx,ts,tsx}',
@@ -29,6 +32,9 @@ const config: Config = {
     '!frontend/components/ui/**',
     '!**/*.constants.ts',
     '!**/errors/**/*.ts',
+    '!**/ports/**/*.ts',
+    '!**/*.DTO.ts',
+    '!**/*.Response.ts',
   ],
   coverageThreshold: {
     global: {

@@ -10,8 +10,8 @@ export class DomainError extends Error {
 }
 
 export class DocumentNotFoundError extends DomainError {
-  constructor(documentId: string) {
-    super('Document not found', { documentId });
+  constructor(message: string = 'Document not found') {
+    super(message);
     this.name = 'DocumentNotFoundError';
   }
 }
@@ -52,8 +52,8 @@ export class DocumentAlreadyProcessedError extends DomainError {
 }
 
 export class ExtractionNotFoundError extends DomainError {
-  constructor(extractionId: string) {
-    super('Extraction not found', { extractionId });
+  constructor(message: string = 'Extraction not found') {
+    super(message);
     this.name = 'ExtractionNotFoundError';
   }
 }
