@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "W-9 Form Schema",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name as shown on income tax return"
+    },
+    "business_name": {
+      "type": ["string", "null"],
+      "description": "Business name/disregarded entity name, if different from above"
+    },
+    "tax_classification": {
+      "type": "string",
+      "enum": [
+        "individual",
+        "c_corporation",
+        "s_corporation",
+        "partnership",
+        "trust_estate",
+        "llc",
+        "other"
+      ],
+      "description": "Federal tax classification"
+    },
+    "llc_tax_classification": {
+      "type": ["string", "null"],
+      "enum": ["c", "s", "p", null],
+      "description": "For LLC: C=C Corporation, S=S Corporation, P=Partnership"
+    },
+    "address": {
+      "type": "string",
+      "description": "Street address"
+    },
+    "city_state_zip": {
+      "type": "string",
+      "description": "City, state, and ZIP code"
+    },
+    "ssn_or_ein": {
+      "type": "string",
+      "pattern": "^\\d{2,3}-?\\d{2}-?\\d{4}$",
+      "description": "Social Security Number or Employer Identification Number"
+    },
+    "signature_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date form was signed (YYYY-MM-DD)"
+    }
+  },
+  "required": [
+    "name",
+    "tax_classification",
+    "address",
+    "city_state_zip",
+    "ssn_or_ein"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Articles of Incorporation Schema",
+  "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Legal name of the corporation"
+    },
+    "state_of_incorporation": {
+      "type": "string",
+      "description": "State where the company was incorporated"
+    },
+    "incorporation_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of incorporation (YYYY-MM-DD)"
+    },
+    "registered_agent_name": {
+      "type": "string",
+      "description": "Name of the registered agent"
+    },
+    "registered_agent_address": {
+      "type": "string",
+      "description": "Address of the registered agent"
+    },
+    "business_purpose": {
+      "type": "string",
+      "description": "Primary business purpose or activity"
+    },
+    "authorized_shares": {
+      "type": "number",
+      "description": "Number of authorized shares"
+    },
+    "filing_number": {
+      "type": "string",
+      "description": "State filing or document number"
+    },
+    "incorporator_name": {
+      "type": "string",
+      "description": "Name of the incorporator"
+    }
+  },
+  "required": [
+    "company_name",
+    "state_of_incorporation",
+    "incorporation_date",
+    "registered_agent_name",
+    "filing_number"
+  ]
+}

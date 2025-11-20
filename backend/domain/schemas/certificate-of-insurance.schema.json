@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Certificate of Insurance Schema",
+  "properties": {
+    "certificate_holder": {
+      "type": "string",
+      "description": "Name of the certificate holder"
+    },
+    "insured_name": {
+      "type": "string",
+      "description": "Name of the insured party"
+    },
+    "policy_number": {
+      "type": "string",
+      "description": "Insurance policy number"
+    },
+    "insurance_company": {
+      "type": "string",
+      "description": "Name of the insurance company/carrier"
+    },
+    "policy_effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date policy becomes effective (YYYY-MM-DD)"
+    },
+    "policy_expiration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date policy expires (YYYY-MM-DD)"
+    },
+    "coverage_type": {
+      "type": "string",
+      "enum": [
+        "general_liability",
+        "automobile",
+        "workers_compensation",
+        "professional_liability",
+        "umbrella",
+        "other"
+      ],
+      "description": "Type of insurance coverage"
+    },
+    "coverage_limit": {
+      "type": "number",
+      "description": "Maximum coverage amount"
+    },
+    "certificate_number": {
+      "type": "string",
+      "description": "Certificate identification number"
+    }
+  },
+  "required": [
+    "certificate_holder",
+    "insured_name",
+    "policy_number",
+    "insurance_company",
+    "policy_effective_date",
+    "policy_expiration_date",
+    "coverage_type"
+  ]
+}

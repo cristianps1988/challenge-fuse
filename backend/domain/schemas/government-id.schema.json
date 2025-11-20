@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Government ID Schema",
+  "properties": {
+    "id_type": {
+      "type": "string",
+      "enum": ["passport", "drivers_license", "state_id", "other"],
+      "description": "Type of identification document"
+    },
+    "id_number": {
+      "type": "string",
+      "description": "ID number or document number"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Full legal name as shown on ID"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of birth (YYYY-MM-DD)"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date ID was issued (YYYY-MM-DD)"
+    },
+    "expiration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date ID expires (YYYY-MM-DD)"
+    },
+    "issuing_authority": {
+      "type": "string",
+      "description": "State, country, or authority that issued the ID"
+    },
+    "address": {
+      "type": "string",
+      "description": "Address shown on ID"
+    }
+  },
+  "required": [
+    "id_type",
+    "id_number",
+    "full_name",
+    "date_of_birth",
+    "issuing_authority"
+  ]
+}
