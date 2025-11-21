@@ -46,6 +46,21 @@ Follow these requirements:
 4. For missing or unclear fields, use null and lower confidence
 5. Follow validation rules (dates, formats, patterns)
 
+CRITICAL: Return data in this EXACT JSON format for EVERY field:
+{
+  "field_name": {
+    "value": "extracted value or null",
+    "confidence": 0.95
+  }
+}
+
+Confidence scoring guidelines:
+- 0.9-1.0: Text is crystal clear, perfectly readable, no ambiguity
+- 0.7-0.9: Text is clear but has minor quality issues or slight ambiguity
+- 0.5-0.7: Text is partially unclear, requires interpretation
+- 0.3-0.5: Text is very unclear, highly uncertain
+- 0.0-0.3: Cannot read or field is missing
+
 Schema:
 ${JSON.stringify(schema, null, 2)}`;
 
@@ -53,6 +68,8 @@ ${JSON.stringify(schema, null, 2)}`;
     prompt += '\n\nLearning examples from previous corrections:\n';
     prompt += learningExamples.join('\n');
   }
+
+  prompt += '\n\nRemember: EVERY field must have the format { "value": ..., "confidence": ... }';
 
   return prompt;
 }

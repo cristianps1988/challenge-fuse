@@ -39,9 +39,6 @@ describe('GET /api/settings/thresholds', () => {
 
     mockThresholdRepository.findAll.mockResolvedValue(mockThresholds);
 
-    const url = new URL('http://localhost/api/settings/thresholds');
-    const request = new NextRequest(url);
-
     const response = await GET();
     const data = await response.json();
 

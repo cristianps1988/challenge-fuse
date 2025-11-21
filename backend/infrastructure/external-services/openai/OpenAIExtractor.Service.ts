@@ -12,7 +12,7 @@ interface ExtractedField {
   confidence: number;
 }
 
-type ExtractedFields = Record<string, ExtractedField>;
+type ExtractedFields = Record<string, ExtractedField | null | string | number | boolean>;
 
 export class OpenAIExtractorService implements ExtractorService {
   async extract(
@@ -21,12 +21,25 @@ export class OpenAIExtractorService implements ExtractorService {
     fileName: string
   ): Promise<ExtractionResult> {
     const startTime = Date.now();
+    let uploadedFile: { id: string } | null = null;
 
     try {
       logger.info('Starting data extraction', { fileName, documentType });
 
       const schema = loadSchema(documentType);
-      const base64File = fileBuffer.toString('base64');
+
+      logger.debug('Uploading file to OpenAI', { fileName, size: fileBuffer.length });
+
+      const uint8Array = new Uint8Array(fileBuffer);
+      const blob = new Blob([uint8Array], { type: 'application/pdf' });
+      const file = await openai.files.create({
+        file: new File([blob], fileName, { type: 'application/pdf' }),
+        purpose: 'assistants',
+      });
+
+      uploadedFile = file;
+      logger.debug('File uploaded successfully', { fileName, fileId: file.id });
+
       const prompt = buildExtractionPrompt(documentType, schema);
 
       const response = await openai.chat.completions.create({
@@ -40,9 +53,9 @@ export class OpenAIExtractorService implements ExtractorService {
                 text: prompt,
               },
               {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${base64File}`,
+                type: 'file',
+                file: {
+                  file_id: file.id,
                 },
               },
             ],
@@ -60,6 +73,14 @@ export class OpenAIExtractorService implements ExtractorService {
       }
 
       const extractedData = JSON.parse(content) as ExtractedFields;
+
+      logger.debug('OpenAI extraction response', {
+        fileName,
+        documentType,
+        fieldCount: Object.keys(extractedData).length,
+        sampleFields: Object.keys(extractedData).slice(0, 3),
+      });
+
       const fields = this.buildFieldsMap(extractedData);
       const overallConfidence = this.calculateOverallConfidence(fields);
       const processingTimeMs = Date.now() - startTime;
@@ -89,6 +110,18 @@ export class OpenAIExtractorService implements ExtractorService {
       });
 
       throw new Error(`Extraction failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (uploadedFile) {
+        try {
+          await openai.files.delete(uploadedFile.id);
+          logger.debug('Cleaned up uploaded file', { fileId: uploadedFile.id });
+        } catch (cleanupError) {
+          logger.warn('Failed to cleanup uploaded file', {
+            fileId: uploadedFile.id,
+            error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+          });
+        }
+      }
     }
   }
 
@@ -96,14 +129,33 @@ export class OpenAIExtractorService implements ExtractorService {
     const fields = new Map<string, FieldValue>();
 
     for (const [fieldName, fieldData] of Object.entries(extractedData)) {
-      const confidence = typeof fieldData.confidence === 'number'
-        ? Confidence.create(fieldData.confidence)
-        : Confidence.create(0.5);
+      if (fieldData === null || fieldData === undefined) {
+        fields.set(
+          fieldName,
+          FieldValue.create(fieldName, null, Confidence.create(0.5))
+        );
+        continue;
+      }
 
-      fields.set(
-        fieldName,
-        FieldValue.create(fieldName, fieldData.value, confidence)
-      );
+      if (typeof fieldData === 'object' && 'value' in fieldData) {
+        const confidence = typeof fieldData.confidence === 'number'
+          ? Confidence.create(fieldData.confidence)
+          : Confidence.create(0.5);
+
+        fields.set(
+          fieldName,
+          FieldValue.create(fieldName, fieldData.value, confidence)
+        );
+      } else {
+        const value = typeof fieldData === 'string' || typeof fieldData === 'number' || typeof fieldData === 'boolean'
+          ? fieldData
+          : null;
+
+        fields.set(
+          fieldName,
+          FieldValue.create(fieldName, value, Confidence.create(0.5))
+        );
+      }
     }
 
     return fields;

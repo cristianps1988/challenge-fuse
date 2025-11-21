@@ -14,7 +14,6 @@ import { UpdateThresholdsUseCase } from '@/backend/application/use-cases/UpdateT
 import { PipelineOrchestratorService } from '@/backend/application/services/PipelineOrchestrator.Service';
 import { LearningLoopService } from '@/backend/application/services/LearningLoop.Service';
 import { DocumentController } from '@/backend/infrastructure/api/controllers/Document.Controller';
-import { logger } from '@/backend/infrastructure/logger';
 
 class Container {
   private documentRepository = new SqliteDocumentRepository();
@@ -44,7 +43,8 @@ class Container {
       this.extractionRepository,
       this.classifierService,
       this.extractorService,
-      this.storageService
+      this.storageService,
+      this.thresholdRepository
     );
   }
 
@@ -116,5 +116,3 @@ class Container {
 }
 
 export const container = new Container();
-
-logger.info('Dependency injection container initialized');

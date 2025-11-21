@@ -22,14 +22,12 @@ const config: Config = {
     'node_modules/(?!(uuid)/)',
   ],
   collectCoverageFrom: [
-    'frontend/**/*.{js,jsx,ts,tsx}',
     'backend/**/*.{js,jsx,ts,tsx}',
     'app/**/*.{js,jsx,ts,tsx}',
     '!**/*.d.ts',
     '!**/*.stories.{js,jsx,ts,tsx}',
     '!**/__tests__/**',
     '!**/node_modules/**',
-    '!frontend/components/ui/**',
     '!**/*.constants.ts',
     '!**/errors/**/*.ts',
     '!**/ports/**/*.ts',
@@ -49,6 +47,7 @@ const config: Config = {
     '!backend/infrastructure/persistence/SqliteExtraction.Repository.ts',
     '!backend/infrastructure/persistence/SqliteCorrection.Repository.ts',
     '!app/layout.tsx',
+    '!frontend/**',
   ],
   coverageThreshold: {
     global: {

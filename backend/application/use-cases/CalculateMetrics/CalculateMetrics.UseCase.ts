@@ -9,6 +9,9 @@ import type {
   OperationalMetrics,
   LearningImpactMetrics,
 } from './CalculateMetrics.Response';
+import type { Document } from '@/backend/domain/entities/Document.Entity';
+import type { Extraction } from '@/backend/domain/entities/Extraction.Entity';
+import type { Correction } from '@/backend/domain/entities/Correction.Entity';
 import { DOCUMENT_TYPES } from '@/backend/domain/document-types.constants';
 import { DOCUMENT_STATUS } from '@/backend/domain/document-status.constants';
 
@@ -49,8 +52,8 @@ export class CalculateMetricsUseCase {
   }
 
   private calculateClassificationMetrics(
-    documents: any[],
-    corrections: any[]
+    documents: Document[],
+    corrections: Correction[]
   ): ClassificationMetrics {
     const typeValues = DOCUMENT_TYPES;
 
@@ -122,7 +125,7 @@ export class CalculateMetricsUseCase {
     };
   }
 
-  private calculateExtractionMetrics(extractions: any[]): ExtractionMetrics {
+  private calculateExtractionMetrics(extractions: Extraction[]): ExtractionMetrics {
     if (extractions.length === 0) {
       return {
         fieldExactMatchRates: {},
@@ -169,7 +172,7 @@ export class CalculateMetricsUseCase {
     };
   }
 
-  private calculateOperationalMetrics(documents: any[]): OperationalMetrics {
+  private calculateOperationalMetrics(documents: Document[]): OperationalMetrics {
     if (documents.length === 0) {
       return {
         averageProcessingTimeMs: 0,
@@ -230,8 +233,8 @@ export class CalculateMetricsUseCase {
   }
 
   private calculateLearningImpactMetrics(
-    documents: any[],
-    corrections: any[]
+    documents: Document[],
+    corrections: Correction[]
   ): LearningImpactMetrics {
     const totalCorrections = corrections.length;
 

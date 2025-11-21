@@ -4,10 +4,10 @@ import { logger } from '@/backend/infrastructure/logger';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     const { documentType, fieldCorrections, correctedBy, notes } = body;
@@ -44,8 +44,9 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
+    const { id: documentId } = await params;
     logger.error('Failed to apply corrections', {
-      documentId: params.id,
+      documentId,
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });

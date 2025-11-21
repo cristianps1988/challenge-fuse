@@ -1,40 +1,27 @@
 import type { DocumentTypeValue } from '@/backend/domain/document-types.constants';
 import { DocumentType } from '@/backend/domain/document-types.constants';
-import fs from 'fs';
-import path from 'path';
+import bankStatementSchema from './bank-statement.schema.json';
+import governmentIdSchema from './government-id.schema.json';
+import w9Schema from './w9.schema.json';
+import certificateOfInsuranceSchema from './certificate-of-insurance.schema.json';
+import articlesOfIncorporationSchema from './articles-of-incorporation.schema.json';
 
-const schemaCache = new Map<DocumentTypeValue, Record<string, unknown>>();
+const SCHEMAS: Record<DocumentTypeValue, Record<string, unknown>> = {
+  [DocumentType.BANK_STATEMENT]: bankStatementSchema,
+  [DocumentType.GOVERNMENT_ID]: governmentIdSchema,
+  [DocumentType.W9]: w9Schema,
+  [DocumentType.CERTIFICATE_OF_INSURANCE]: certificateOfInsuranceSchema,
+  [DocumentType.ARTICLES_OF_INCORPORATION]: articlesOfIncorporationSchema,
+};
 
 export function loadSchema(documentType: DocumentTypeValue): Record<string, unknown> {
-  if (schemaCache.has(documentType)) {
-    return schemaCache.get(documentType)!;
+  const schema = SCHEMAS[documentType];
+
+  if (!schema) {
+    throw new Error(`Schema not found for document type: ${documentType}`);
   }
-
-  const schemaFileName = getSchemaFileName(documentType);
-  const schemaPath = path.join(__dirname, schemaFileName);
-
-  if (!fs.existsSync(schemaPath)) {
-    throw new Error(`Schema file not found for document type: ${documentType}`);
-  }
-
-  const schemaContent = fs.readFileSync(schemaPath, 'utf-8');
-  const schema = JSON.parse(schemaContent) as Record<string, unknown>;
-
-  schemaCache.set(documentType, schema);
 
   return schema;
-}
-
-function getSchemaFileName(documentType: DocumentTypeValue): string {
-  const schemaFileNames: Record<DocumentTypeValue, string> = {
-    [DocumentType.BANK_STATEMENT]: 'bank-statement.schema.json',
-    [DocumentType.GOVERNMENT_ID]: 'government-id.schema.json',
-    [DocumentType.W9]: 'w9.schema.json',
-    [DocumentType.CERTIFICATE_OF_INSURANCE]: 'certificate-of-insurance.schema.json',
-    [DocumentType.ARTICLES_OF_INCORPORATION]: 'articles-of-incorporation.schema.json',
-  };
-
-  return schemaFileNames[documentType];
 }
 
 export function getAllSchemas(): Map<DocumentTypeValue, Record<string, unknown>> {

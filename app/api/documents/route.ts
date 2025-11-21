@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     logger.info('Fetching documents', { status, type, limit, offset });
 
     const documentRepository = container.getDocumentRepository();
+    const extractionRepository = container.getExtractionRepository();
+
     const documents = await documentRepository.findAll({
       status: status as DocumentStatusValue | undefined,
       type: type as DocumentTypeValue | undefined,
@@ -30,18 +32,29 @@ export async function GET(request: NextRequest) {
       type: type as DocumentTypeValue | undefined,
     });
 
+    const documentIds = documents.map(doc => doc.getId());
+    const extractions = await extractionRepository.findAllByDocumentIds(documentIds);
+
+    const extractionMap = new Map(
+      extractions.map(ext => [ext.getDocumentId(), ext])
+    );
+
     return NextResponse.json({
-      documents: documents.map((doc) => ({
-        id: doc.getId(),
-        fileName: doc.getFileName(),
-        filePath: doc.getFilePath(),
-        fileSize: doc.getFileSize(),
-        status: doc.getStatus(),
-        documentType: doc.getType()?.getValue(),
-        classificationConfidence: doc.getClassificationConfidence()?.getValue(),
-        createdAt: doc.getUploadedAt().toISOString(),
-        processedAt: doc.getProcessedAt()?.toISOString(),
-      })),
+      documents: documents.map((doc) => {
+        const extraction = extractionMap.get(doc.getId());
+        return {
+          id: doc.getId(),
+          filename: doc.getFileName(),
+          filePath: doc.getFilePath(),
+          fileSize: doc.getFileSize(),
+          status: doc.getStatus(),
+          documentType: doc.getType()?.getValue() || 'unknown',
+          classificationConfidence: doc.getClassificationConfidence()?.getValue() || 0,
+          extractionConfidence: extraction?.getOverallConfidence().getValue() || 0,
+          createdAt: doc.getUploadedAt().toISOString(),
+          processedAt: doc.getProcessedAt()?.toISOString(),
+        };
+      }),
       pagination: {
         total,
         limit,

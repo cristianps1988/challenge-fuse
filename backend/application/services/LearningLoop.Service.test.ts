@@ -222,7 +222,7 @@ describe('LearningLoopService', () => {
 
       correctionRepository.findAll.mockResolvedValue(corrections);
 
-      const examples = await service.getAllExamples(15);
+      await service.getAllExamples(15);
 
       expect(correctionRepository.findAll).toHaveBeenCalledWith({ limit: 15 });
     });

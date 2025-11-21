@@ -1,7 +1,6 @@
 import type { Correction } from '@/backend/domain/entities/Correction.Entity';
 import type { CorrectionRepository } from '@/backend/application/ports/CorrectionRepository';
 import type { DocumentRepository } from '@/backend/application/ports/DocumentRepository';
-import type { ExtractionRepository } from '@/backend/application/ports/ExtractionRepository';
 
 export interface LearningExample {
   documentId: string;
@@ -87,7 +86,7 @@ export class LearningLoopService {
     }
 
     const fieldFrequency = new Map<string, number>();
-    const fieldValues = new Map<string, Set<any>>();
+    const fieldValues = new Map<string, Set<string | number | boolean | null>>();
 
     examples.forEach((example) => {
       example.fieldCorrections.forEach(({ fieldName, correctedValue }) => {
@@ -104,7 +103,10 @@ export class LearningLoopService {
 
     fieldFrequency.forEach((count, fieldName) => {
       const required = count / examples.length > 0.8;
-      const values = Array.from(fieldValues.get(fieldName) ?? []);
+      const allValues = Array.from(fieldValues.get(fieldName) ?? []);
+      const values = allValues.filter(
+        (v): v is string | number => typeof v === 'string' || typeof v === 'number'
+      );
 
       const rule: ValidationRule = {
         fieldName,

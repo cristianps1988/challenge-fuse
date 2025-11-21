@@ -7,13 +7,14 @@ import { getEnv } from '@/backend/infrastructure/config/env';
 const { UPLOADS_DIR } = getEnv();
 
 export class FileSystemStorageService implements StorageService {
-  constructor() {
-    this.ensureUploadsDirectory();
-  }
+  private initialized = false;
 
   private async ensureUploadsDirectory(): Promise<void> {
+    if (this.initialized) return;
+
     try {
       await fs.mkdir(UPLOADS_DIR || path.join(process.cwd(), 'data', 'uploads'), { recursive: true });
+      this.initialized = true;
       logger.info('Uploads directory ready', { path: UPLOADS_DIR });
     } catch (error) {
       logger.error('Failed to create uploads directory', {
@@ -25,6 +26,8 @@ export class FileSystemStorageService implements StorageService {
   }
 
   async save(fileBuffer: Buffer, fileName: string): Promise<string> {
+    await this.ensureUploadsDirectory();
+
     try {
       const sanitizedFileName = this.sanitizeFileName(fileName);
       const timestamp = Date.now();

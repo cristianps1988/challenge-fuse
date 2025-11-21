@@ -7,16 +7,9 @@ const logLevel = LOG_LEVEL || (isDevelopment ? 'debug' : 'info');
 
 const pinoLogger = pino({
   level: logLevel,
-  transport: isDevelopment
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname',
-        },
-      }
-    : undefined,
+  browser: {
+    asObject: true,
+  },
   formatters: {
     level: (label) => {
       return { level: label.toUpperCase() };

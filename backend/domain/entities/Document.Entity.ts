@@ -2,7 +2,6 @@ import { DocumentStatus, DocumentStatusValue } from '@/backend/domain/document-s
 import { DocumentType } from '@/backend/domain/value-objects/DocumentType.ValueObject';
 import { Confidence } from '@/backend/domain/value-objects/Confidence.ValueObject';
 import {
-  InvalidDocumentStatusError,
   DocumentAlreadyProcessedError,
   ValidationError,
 } from '@/backend/domain/errors/Domain.Error';

@@ -4,10 +4,10 @@ import { logger } from '@/backend/infrastructure/logger';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     logger.info('Reprocessing document', { documentId: id });
 
@@ -32,8 +32,9 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
+    const { id: documentId } = await params;
     logger.error('Failed to reprocess document', {
-      documentId: params.id,
+      documentId,
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });

@@ -1,7 +1,4 @@
 import { ProcessDocumentUseCase } from './ProcessDocument.UseCase';
-import { Document } from '@/backend/domain/entities/Document.Entity';
-import { Extraction } from '@/backend/domain/entities/Extraction.Entity';
-import { DocumentType } from '@/backend/domain/value-objects/DocumentType.ValueObject';
 import { Confidence } from '@/backend/domain/value-objects/Confidence.ValueObject';
 import { FieldValue } from '@/backend/domain/value-objects/FieldValue.ValueObject';
 import type { DocumentRepository } from '@/backend/application/ports/DocumentRepository';
@@ -9,6 +6,7 @@ import type { ExtractionRepository } from '@/backend/application/ports/Extractio
 import type { ClassifierService, ClassificationResult } from '@/backend/application/ports/ClassifierService';
 import type { ExtractorService, ExtractionResult } from '@/backend/application/ports/ExtractorService';
 import type { StorageService } from '@/backend/application/ports/StorageService';
+import type { ThresholdRepository } from '@/backend/application/ports/ThresholdRepository';
 
 describe('ProcessDocumentUseCase', () => {
   let useCase: ProcessDocumentUseCase;
@@ -17,6 +15,7 @@ describe('ProcessDocumentUseCase', () => {
   let classifierService: jest.Mocked<ClassifierService>;
   let extractorService: jest.Mocked<ExtractorService>;
   let storageService: jest.Mocked<StorageService>;
+  let thresholdRepository: jest.Mocked<ThresholdRepository>;
 
   beforeEach(() => {
     documentRepository = {
@@ -53,12 +52,19 @@ describe('ProcessDocumentUseCase', () => {
       getFileSize: jest.fn(),
     };
 
+    thresholdRepository = {
+      save: jest.fn(),
+      findAll: jest.fn(),
+      findByType: jest.fn().mockResolvedValue(0.85),
+    };
+
     useCase = new ProcessDocumentUseCase(
       documentRepository,
       extractionRepository,
       classifierService,
       extractorService,
-      storageService
+      storageService,
+      thresholdRepository
     );
   });
 

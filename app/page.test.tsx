@@ -4,23 +4,24 @@ import Home from './page'
 describe('Home Page', () => {
   it('should render the main heading', () => {
     render(<Home />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Fuse Finance')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('AI-Powered Document Processing')
   })
 
   it('should render the description', () => {
     render(<Home />)
-    expect(screen.getByText('Document Processing MVP')).toBeInTheDocument()
+    expect(screen.getByText(/Automatically classify and extract structured data/)).toBeInTheDocument()
   })
 
-  it('should render main element with correct classes', () => {
+  it('should render feature cards', () => {
     render(<Home />)
-    const main = screen.getByRole('main')
-    expect(main).toHaveClass('min-h-screen', 'p-8')
+    expect(screen.getByText('Upload Documents')).toBeInTheDocument()
+    expect(screen.getByText('View Documents')).toBeInTheDocument()
+    expect(screen.getByText('Analytics Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Settings')).toBeInTheDocument()
   })
 
-  it('should render heading with correct styles', () => {
+  it('should render Get Started button', () => {
     render(<Home />)
-    const heading = screen.getByRole('heading', { level: 1 })
-    expect(heading).toHaveClass('text-3xl', 'font-bold')
+    expect(screen.getByRole('link', { name: /Get Started/i })).toBeInTheDocument()
   })
 })

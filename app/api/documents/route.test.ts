@@ -24,6 +24,7 @@ import { logger } from '@/backend/infrastructure/logger';
 
 describe('GET /api/documents', () => {
   let mockDocumentRepository: any;
+  let mockExtractionRepository: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -31,7 +32,11 @@ describe('GET /api/documents', () => {
       findAll: jest.fn(),
       count: jest.fn(),
     };
+    mockExtractionRepository = {
+      findAllByDocumentIds: jest.fn().mockResolvedValue([]),
+    };
     (container.getDocumentRepository as jest.Mock).mockReturnValue(mockDocumentRepository);
+    (container.getExtractionRepository as jest.Mock).mockReturnValue(mockExtractionRepository);
   });
 
   it('should return documents with default pagination', async () => {

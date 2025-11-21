@@ -14,11 +14,23 @@ interface OpenAIClassificationResponse {
 export class OpenAIClassifierService implements ClassifierService {
   async classify(fileBuffer: Buffer, fileName: string): Promise<ClassificationResult> {
     const startTime = Date.now();
+    let uploadedFile: { id: string } | null = null;
 
     try {
       logger.info('Starting document classification', { fileName });
 
-      const base64File = fileBuffer.toString('base64');
+      logger.debug('Uploading file to OpenAI', { fileName, size: fileBuffer.length });
+
+      const uint8Array = new Uint8Array(fileBuffer);
+      const blob = new Blob([uint8Array], { type: 'application/pdf' });
+      const file = await openai.files.create({
+        file: new File([blob], fileName, { type: 'application/pdf' }),
+        purpose: 'assistants',
+      });
+
+      uploadedFile = file;
+      logger.debug('File uploaded successfully', { fileName, fileId: file.id });
+
       const prompt = buildClassificationPrompt();
 
       const response = await openai.chat.completions.create({
@@ -32,9 +44,9 @@ export class OpenAIClassifierService implements ClassifierService {
                 text: prompt,
               },
               {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${base64File}`,
+                type: 'file',
+                file: {
+                  file_id: file.id,
                 },
               },
             ],
@@ -78,6 +90,18 @@ export class OpenAIClassifierService implements ClassifierService {
       });
 
       throw new Error(`Classification failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (uploadedFile) {
+        try {
+          await openai.files.delete(uploadedFile.id);
+          logger.debug('Cleaned up uploaded file', { fileId: uploadedFile.id });
+        } catch (cleanupError) {
+          logger.warn('Failed to cleanup uploaded file', {
+            fileId: uploadedFile.id,
+            error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+          });
+        }
+      }
     }
   }
 }
