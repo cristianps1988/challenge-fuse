@@ -137,4 +137,51 @@ export class LearningLoopService {
 
     return Math.min(baseConfidence + learningFactor, 1.0);
   }
+
+  async getClassificationExamples(limit: number = 3): Promise<string> {
+    const corrections = await this.correctionRepository.findAll({ limit: limit * 2 });
+
+    const typeCorrections = corrections.filter((c) => c.hasTypeCorrection());
+
+    if (typeCorrections.length === 0) {
+      return '';
+    }
+
+    const examplesText = typeCorrections
+      .slice(0, limit)
+      .map((correction, index) => {
+        const originalType = correction.getOriginalType()?.getValue() ?? 'unknown';
+        const correctedType = correction.getCorrectedType()?.getValue() ?? 'unknown';
+
+        return `Example ${index + 1}:\n- Original classification: ${originalType}\n- Corrected to: ${correctedType}\n- Notes: ${correction.getNotes() ?? 'Human correction applied'}`;
+      })
+      .join('\n\n');
+
+    return `\n\nLearning from past corrections:\n${examplesText}`;
+  }
+
+  async getFieldExtractionExamples(documentType: string, limit: number = 3): Promise<string> {
+    const examples = await this.getExamplesForType(documentType, limit);
+
+    if (examples.length === 0 || examples.every((e) => e.fieldCorrections.length === 0)) {
+      return '';
+    }
+
+    const examplesText = examples
+      .filter((e) => e.fieldCorrections.length > 0)
+      .slice(0, limit)
+      .map((example, index) => {
+        const fields = example.fieldCorrections
+          .slice(0, 3)
+          .map((fc) => {
+            return `  - ${fc.fieldName}: "${fc.originalValue}" → "${fc.correctedValue}"`;
+          })
+          .join('\n');
+
+        return `Example ${index + 1} (${example.originalType}):\n${fields}`;
+      })
+      .join('\n\n');
+
+    return `\n\nLearning from past field corrections for ${documentType}:\n${examplesText}`;
+  }
 }

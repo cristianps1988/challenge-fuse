@@ -1,11 +1,10 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { FileText, ExternalLink } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/frontend/components/ui/table';
-import { Button } from '@/frontend/components/ui/button';
 import { StatusBadge } from '@/frontend/components/StatusBadge';
 import { ConfidenceIndicator } from '@/frontend/components/ConfidenceIndicator';
 import { EmptyState } from '@/frontend/components/EmptyState';
@@ -20,7 +19,12 @@ interface DocumentListProps {
 }
 
 export function DocumentList({ refreshTrigger }: DocumentListProps) {
+  const router = useRouter();
   const { documents, isLoading, error } = useDocuments({ refreshTrigger });
+
+  const handleRowClick = (documentId: string) => {
+    router.push(`/documents/${documentId}`);
+  };
 
   if (isLoading) {
     return (
@@ -62,59 +66,58 @@ export function DocumentList({ refreshTrigger }: DocumentListProps) {
         <CardTitle>Recent Documents</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Filename</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Classification</TableHead>
-              <TableHead>Extraction</TableHead>
-              <TableHead>Uploaded</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {documents.map((doc) => (
-              <TableRow key={doc.id}>
-                <TableCell className="font-medium">{doc.filename}</TableCell>
-                <TableCell>
-                  {DocumentTypeLabel[doc.documentType as DocumentTypeValue] || doc.documentType}
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={doc.status as DocumentStatusValue} />
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-[150px]">
-                    <ConfidenceIndicator
-                      confidence={doc.classificationConfidence || 0}
-                      size="sm"
-                    />
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-[150px]">
-                    <ConfidenceIndicator
-                      confidence={doc.extractionConfidence || 0}
-                      size="sm"
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-gray-500">
-                  {formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true })}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Link href={`/documents/${doc.id}`}>
-                    <Button variant="ghost" size="sm">
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                  </Link>
-                </TableCell>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Filename</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Classification</TableHead>
+                <TableHead>Extraction</TableHead>
+                <TableHead>Uploaded</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {documents.map((doc) => (
+                <TableRow
+                  key={doc.id}
+                  onClick={() => handleRowClick(doc.id)}
+                  className="cursor-pointer hover:bg-gray-50 transition-colors"
+                >
+                  <TableCell className="font-medium max-w-[200px] truncate" title={doc.filename}>
+                    {doc.filename}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {DocumentTypeLabel[doc.documentType as DocumentTypeValue] || doc.documentType}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={doc.status as DocumentStatusValue} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-[140px]">
+                      <ConfidenceIndicator
+                        confidence={doc.classificationConfidence || 0}
+                        size="sm"
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-[140px]">
+                      <ConfidenceIndicator
+                        confidence={doc.extractionConfidence || 0}
+                        size="sm"
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-500 whitespace-nowrap">
+                    {formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true })}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

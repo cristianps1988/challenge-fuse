@@ -1,4 +1,5 @@
 import { ThresholdSliders } from '@/frontend/features/settings/components/ThresholdSliders';
+import { AppSettingsSliders } from '@/frontend/features/settings/components/AppSettingsSliders';
 
 export default function SettingsPage() {
   return (
@@ -10,6 +11,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      <AppSettingsSliders />
       <ThresholdSliders />
     </div>
   );

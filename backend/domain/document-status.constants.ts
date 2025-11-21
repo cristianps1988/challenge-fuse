@@ -4,6 +4,7 @@ export const DocumentStatus = {
   NEEDS_REVIEW: 'needs_review',
   REVIEWED: 'reviewed',
   FAILED: 'failed',
+  REJECTED: 'rejected',
 } as const;
 
 export type DocumentStatusValue = typeof DocumentStatus[keyof typeof DocumentStatus];
@@ -16,4 +17,5 @@ export const StatusConfig: Record<DocumentStatusValue, { label: string; variant:
   [DocumentStatus.NEEDS_REVIEW]: { label: 'Needs Review', variant: 'warning' },
   [DocumentStatus.REVIEWED]: { label: 'Reviewed', variant: 'info' },
   [DocumentStatus.FAILED]: { label: 'Failed', variant: 'destructive' },
+  [DocumentStatus.REJECTED]: { label: 'Rejected', variant: 'destructive' },
 } as const;

@@ -6,6 +6,7 @@ import { Button } from '@/frontend/components/ui/button';
 import { useUploadDocument } from '../hooks/use-upload-document';
 import { ErrorMessage } from '@/frontend/components/ErrorMessage';
 import { LoadingSpinner } from '@/frontend/components/LoadingSpinner';
+import { useAppSettings } from '@/frontend/features/settings/hooks/use-app-settings';
 
 interface DropzoneProps {
   onUploadSuccess?: (documentId: string) => void;
@@ -14,7 +15,11 @@ interface DropzoneProps {
 export function Dropzone({ onUploadSuccess }: DropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const { uploadDocument, isUploading, error, reset } = useUploadDocument();
+  const { settings } = useAppSettings();
+
+  const maxFileSizeMb = settings?.max_file_size_mb ?? 10;
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -26,50 +31,54 @@ export function Dropzone({ onUploadSuccess }: DropzoneProps) {
     setIsDragging(false);
   }, []);
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     if (file.type !== 'application/pdf') {
       return 'Only PDF files are supported';
     }
-    const maxSize = 10 * 1024 * 1024;
+    const maxSize = maxFileSizeMb * 1024 * 1024;
     if (file.size > maxSize) {
-      return 'File size must be less than 10MB';
+      return `File size must be less than ${maxFileSizeMb}MB`;
     }
     return null;
-  };
+  }, [maxFileSizeMb]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
       reset();
+      setValidationError(null);
 
       const files = Array.from(e.dataTransfer.files);
       if (files.length > 0) {
         const file = files[0];
-        const validationError = validateFile(file);
-        if (validationError) {
+        const error = validateFile(file);
+        if (error) {
+          setValidationError(error);
           return;
         }
         setSelectedFile(file);
       }
     },
-    [reset]
+    [reset, validateFile]
   );
 
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       reset();
+      setValidationError(null);
       const files = e.target.files;
       if (files && files.length > 0) {
         const file = files[0];
-        const validationError = validateFile(file);
-        if (validationError) {
+        const error = validateFile(file);
+        if (error) {
+          setValidationError(error);
           return;
         }
         setSelectedFile(file);
       }
     },
-    [reset]
+    [reset, validateFile]
   );
 
   const handleUpload = async () => {
@@ -84,6 +93,7 @@ export function Dropzone({ onUploadSuccess }: DropzoneProps) {
 
   const handleCancel = () => {
     setSelectedFile(null);
+    setValidationError(null);
     reset();
   };
 
@@ -93,6 +103,13 @@ export function Dropzone({ onUploadSuccess }: DropzoneProps) {
         <ErrorMessage
           message={error.message}
           onDismiss={reset}
+        />
+      )}
+
+      {validationError && (
+        <ErrorMessage
+          message={validationError}
+          onDismiss={() => setValidationError(null)}
         />
       )}
 
@@ -130,7 +147,7 @@ export function Dropzone({ onUploadSuccess }: DropzoneProps) {
               </label>
             </div>
             <p className="text-xs text-gray-500 mt-4">
-              Supported: PDF files up to 10MB
+              Supported: PDF files up to {maxFileSizeMb}MB
             </p>
           </>
         ) : (

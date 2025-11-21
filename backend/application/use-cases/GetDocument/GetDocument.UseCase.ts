@@ -29,6 +29,8 @@ export class GetDocumentUseCase {
           value: fieldValue.getValue(),
           confidence: fieldValue.getConfidence().getValue(),
           valueType: this.inferValueType(fieldValue.getValue()),
+          page: fieldValue.getPage(),
+          boundingBox: fieldValue.getBoundingBox(),
         }))
       : [];
 

@@ -6,16 +6,18 @@ import { Input } from '@/frontend/components/ui/input';
 import { Label } from '@/frontend/components/ui/label';
 import { Button } from '@/frontend/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/frontend/components/ui/select';
+import { Badge } from '@/frontend/components/ui/badge';
 import { ConfidenceIndicator } from '@/frontend/components/ConfidenceIndicator';
 import { LoadingSpinner } from '@/frontend/components/LoadingSpinner';
 import { ErrorMessage } from '@/frontend/components/ErrorMessage';
 import { DocumentType, DocumentTypeLabel, DocumentTypeValue } from '@/backend/domain/document-types.constants';
-import { Save, RotateCcw } from 'lucide-react';
+import { Save, RotateCcw, FileText } from 'lucide-react';
 
 interface FieldValue {
   name: string;
   value: string;
   confidence: number;
+  page: number | null;
 }
 
 interface FieldEditorProps {
@@ -143,9 +145,17 @@ export function FieldEditor({ documentId, currentType, fields, onSave }: FieldEd
             {Object.entries(fields).map(([key, field]) => (
               <div key={key} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor={key} className="capitalize">
-                    {field.name.replace(/_/g, ' ')}
-                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={key} className="capitalize">
+                      {field.name.replace(/_/g, ' ')}
+                    </Label>
+                    {field.page !== null && (
+                      <Badge variant="outline" className="text-xs">
+                        <FileText className="h-3 w-3 mr-1" />
+                        Page {field.page}
+                      </Badge>
+                    )}
+                  </div>
                   <div className="w-48">
                     <ConfidenceIndicator confidence={field.confidence} size="sm" />
                   </div>

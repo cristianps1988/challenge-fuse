@@ -24,7 +24,6 @@ export function useThresholds() {
 
       const data = await response.json();
 
-      // Transform object to array of Threshold objects
       const thresholdsArray: Threshold[] = data.thresholds
         ? Object.entries(data.thresholds).map(([documentType, threshold]) => ({
             documentType,

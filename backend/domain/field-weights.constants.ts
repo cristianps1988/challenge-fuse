@@ -74,6 +74,7 @@ export const FIELD_WEIGHTS: DocumentFieldWeights = {
     incorporators: { weight: STANDARD_WEIGHT, level: 'standard' },
     filing_number: { weight: CRITICAL_WEIGHT, level: 'critical' },
   },
+  [DocumentType.UNKNOWN]: {},
 } as const;
 
 export function getFieldWeight(documentType: DocumentTypeValue, fieldName: string): FieldWeightConfig {

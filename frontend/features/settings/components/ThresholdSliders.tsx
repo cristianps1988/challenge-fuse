@@ -9,7 +9,7 @@ import { LoadingSpinner } from '@/frontend/components/LoadingSpinner';
 import { ErrorMessage } from '@/frontend/components/ErrorMessage';
 import { useThresholds } from '../hooks/use-thresholds';
 import { DocumentTypeLabel, DocumentTypeValue } from '@/backend/domain/document-types.constants';
-import { Save, RotateCcw, Info } from 'lucide-react';
+import { Save, RotateCcw } from 'lucide-react';
 
 export function ThresholdSliders() {
   const { thresholds, isLoading, error, isSaving, updateThresholds } = useThresholds();
@@ -23,6 +23,14 @@ export function ThresholdSliders() {
       return values;
     }
     return {};
+  }, [thresholds]);
+
+  const classificationThreshold = useMemo(() => {
+    return thresholds.find((t) => t.documentType === 'classification');
+  }, [thresholds]);
+
+  const extractionThresholds = useMemo(() => {
+    return thresholds.filter((t) => t.documentType !== 'classification');
   }, [thresholds]);
 
   const [values, setValues] = useState<Record<string, number>>(() => initialValues);
@@ -92,10 +100,10 @@ export function ThresholdSliders() {
       <CardHeader>
         <CardTitle>Confidence Thresholds</CardTitle>
         <CardDescription>
-          Configure minimum confidence levels for automatic approval. Documents below these thresholds will be flagged for review.
+          Configure minimum confidence levels for classification and extraction. Documents below these thresholds will be flagged for review or rejected.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8">
         {saveError && (
           <ErrorMessage message={saveError} onDismiss={() => setSaveError(null)} />
         )}
@@ -106,49 +114,84 @@ export function ThresholdSliders() {
           </div>
         )}
 
-        <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 flex items-start gap-3">
-          <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-900">
-            <p className="font-medium mb-1">How thresholds work</p>
-            <p>
-              Documents with classification confidence below the threshold will be marked as &quot;Needs Review&quot;.
-              Higher thresholds mean more cautious processing, lower thresholds mean more automatic approvals.
-            </p>
-          </div>
-        </div>
+        {classificationThreshold && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Classification Threshold</h3>
+              <p className="text-sm text-gray-600">
+                Minimum confidence for document classification. Documents classified as &quot;unknown&quot; or with confidence below this threshold will be rejected or flagged for review.
+              </p>
+            </div>
 
-        <div className="space-y-6">
-          {Array.isArray(thresholds) && thresholds.map((threshold) => {
-            const currentValue = values[threshold.documentType] || threshold.threshold;
-            const percentage = Math.round(currentValue * 100);
-
-            return (
-              <div key={threshold.documentType} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor={threshold.documentType} className="text-base font-medium">
-                    {DocumentTypeLabel[threshold.documentType as DocumentTypeValue] || threshold.documentType}
-                  </Label>
-                  <span className="text-sm font-semibold text-gray-700 min-w-16 text-right">
-                    {percentage}%
-                  </span>
-                </div>
-                <Slider
-                  id={threshold.documentType}
-                  value={[currentValue]}
-                  onValueChange={(value) => handleSliderChange(threshold.documentType, value)}
-                  min={0.5}
-                  max={0.99}
-                  step={0.01}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>More automatic (50%)</span>
-                  <span>More cautious (99%)</span>
-                </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="classification" className="text-base font-medium">
+                  Classification Confidence
+                </Label>
+                <span className="text-sm font-semibold text-gray-700 min-w-16 text-right">
+                  {Math.round((values[classificationThreshold.documentType] || classificationThreshold.threshold) * 100)}%
+                </span>
               </div>
-            );
-          })}
-        </div>
+              <Slider
+                id="classification"
+                value={[values[classificationThreshold.documentType] || classificationThreshold.threshold]}
+                onValueChange={(value) => handleSliderChange(classificationThreshold.documentType, value)}
+                min={0.5}
+                max={0.99}
+                step={0.01}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>More permissive (50%)</span>
+                <span>More strict (99%)</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {extractionThresholds.length > 0 && (
+          <div className="space-y-4 pt-6 border-t">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Extraction Thresholds</h3>
+              <p className="text-sm text-gray-600">
+                Minimum confidence for field extraction by document type. Documents with extraction confidence below these thresholds will be flagged for review.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {extractionThresholds.map((threshold) => {
+                const currentValue = values[threshold.documentType] || threshold.threshold;
+                const percentage = Math.round(currentValue * 100);
+
+                return (
+                  <div key={threshold.documentType} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor={threshold.documentType} className="text-base font-medium">
+                        {DocumentTypeLabel[threshold.documentType as DocumentTypeValue] || threshold.documentType}
+                      </Label>
+                      <span className="text-sm font-semibold text-gray-700 min-w-16 text-right">
+                        {percentage}%
+                      </span>
+                    </div>
+                    <Slider
+                      id={threshold.documentType}
+                      value={[currentValue]}
+                      onValueChange={(value) => handleSliderChange(threshold.documentType, value)}
+                      min={0.5}
+                      max={0.99}
+                      step={0.01}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>More automatic (50%)</span>
+                      <span>More cautious (99%)</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-3 pt-6 border-t">
           <Button onClick={handleSave} disabled={!hasChanges || isSaving} className="min-w-[120px]">

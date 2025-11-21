@@ -6,4 +6,8 @@ export interface ThresholdRepository {
   findAll(): Promise<Partial<Record<DocumentTypeValue, number>>>;
 
   findByType(documentType: DocumentTypeValue): Promise<number | null>;
+
+  findClassificationThreshold(): Promise<number>;
+
+  saveClassificationThreshold(threshold: number): Promise<void>;
 }

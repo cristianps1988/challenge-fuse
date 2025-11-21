@@ -1,14 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/components/ui/card';
 import { Dropzone } from '@/frontend/features/upload/components/Dropzone';
-import { DocumentList } from '@/frontend/features/upload/components/DocumentList';
 
 export default function UploadPage() {
   const router = useRouter();
-  const [refreshTrigger] = useState(0);
 
   const handleUploadSuccess = (documentId: string) => {
     router.push(`/documents/${documentId}`);
@@ -34,8 +31,6 @@ export default function UploadPage() {
           <Dropzone onUploadSuccess={handleUploadSuccess} />
         </CardContent>
       </Card>
-
-      <DocumentList refreshTrigger={refreshTrigger} />
     </div>
   );
 }

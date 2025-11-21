@@ -77,4 +77,45 @@ export class SqliteThresholdRepository implements ThresholdRepository {
       throw error;
     }
   }
+
+  async findClassificationThreshold(): Promise<number> {
+    try {
+      const stmt = db.prepare(`
+        SELECT confidence_threshold
+        FROM thresholds
+        WHERE document_type = 'classification'
+      `);
+
+      const row = stmt.get() as { confidence_threshold: number } | undefined;
+
+      return row?.confidence_threshold ?? 0.70;
+    } catch (error) {
+      logger.error('Failed to find classification threshold', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  async saveClassificationThreshold(threshold: number): Promise<void> {
+    try {
+      const stmt = db.prepare(`
+        INSERT INTO thresholds (document_type, confidence_threshold)
+        VALUES ('classification', ?)
+        ON CONFLICT(document_type)
+        DO UPDATE SET
+          confidence_threshold = excluded.confidence_threshold,
+          updated_at = datetime('now')
+      `);
+
+      stmt.run(threshold);
+
+      logger.info('Classification threshold saved', { threshold });
+    } catch (error) {
+      logger.error('Failed to save classification threshold', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
 }

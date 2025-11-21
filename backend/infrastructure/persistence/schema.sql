@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS documents (
   file_path TEXT NOT NULL,
   file_size INTEGER NOT NULL,
   uploaded_at TEXT NOT NULL,
-  status TEXT NOT NULL CHECK(status IN ('processing', 'completed', 'needs_review', 'reviewed', 'failed')),
-  type TEXT CHECK(type IN ('bank_statement', 'government_id', 'w9', 'certificate_of_insurance', 'articles_of_incorporation')),
+  status TEXT NOT NULL CHECK(status IN ('processing', 'completed', 'needs_review', 'reviewed', 'failed', 'rejected')),
+  type TEXT CHECK(type IN ('bank_statement', 'government_id', 'w9', 'certificate_of_insurance', 'articles_of_incorporation', 'unknown')),
   type_confidence REAL CHECK(type_confidence >= 0 AND type_confidence <= 1),
   processed_at TEXT,
   error_message TEXT,
@@ -77,8 +77,23 @@ CREATE TABLE IF NOT EXISTS thresholds (
 CREATE INDEX IF NOT EXISTS idx_thresholds_document_type ON thresholds(document_type);
 
 INSERT OR IGNORE INTO thresholds (document_type, confidence_threshold) VALUES
+  ('classification', 0.70),
   ('bank_statement', 0.85),
   ('government_id', 0.90),
   ('w9', 0.85),
   ('certificate_of_insurance', 0.80),
   ('articles_of_incorporation', 0.80);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  setting_key TEXT NOT NULL UNIQUE,
+  setting_value TEXT NOT NULL,
+  setting_type TEXT NOT NULL CHECK(setting_type IN ('string', 'number', 'boolean', 'json')),
+  description TEXT,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_settings_key ON app_settings(setting_key);
+
+INSERT OR IGNORE INTO app_settings (setting_key, setting_value, setting_type, description) VALUES
+  ('max_file_size_mb', '10', 'number', 'Maximum file size in megabytes for document uploads');

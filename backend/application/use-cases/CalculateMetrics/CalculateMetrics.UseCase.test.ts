@@ -9,12 +9,14 @@ import { DocumentStatus } from '@/backend/domain/document-status.constants';
 import type { DocumentRepository } from '@/backend/application/ports/DocumentRepository';
 import type { ExtractionRepository } from '@/backend/application/ports/ExtractionRepository';
 import type { CorrectionRepository } from '@/backend/application/ports/CorrectionRepository';
+import type { ThresholdRepository } from '@/backend/application/ports/ThresholdRepository';
 
 describe('CalculateMetricsUseCase', () => {
   let useCase: CalculateMetricsUseCase;
   let documentRepository: jest.Mocked<DocumentRepository>;
   let extractionRepository: jest.Mocked<ExtractionRepository>;
   let correctionRepository: jest.Mocked<CorrectionRepository>;
+  let thresholdRepository: jest.Mocked<ThresholdRepository>;
 
   beforeEach(() => {
     documentRepository = {
@@ -44,10 +46,19 @@ describe('CalculateMetricsUseCase', () => {
       delete: jest.fn(),
     };
 
+    thresholdRepository = {
+      findAll: jest.fn(),
+      save: jest.fn(),
+      findByType: jest.fn(),
+      findClassificationThreshold: jest.fn().mockResolvedValue(0.70),
+      saveClassificationThreshold: jest.fn(),
+    };
+
     useCase = new CalculateMetricsUseCase(
       documentRepository,
       extractionRepository,
-      correctionRepository
+      correctionRepository,
+      thresholdRepository
     );
   });
 
@@ -56,6 +67,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue([]);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -96,6 +108,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue(documents);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -137,6 +150,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue(documents);
       correctionRepository.findAll.mockResolvedValue(corrections);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -175,6 +189,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue(documents);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -238,6 +253,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue(documents);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue(extractions);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -277,6 +293,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue(documents);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -318,6 +335,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue(documents);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -344,6 +362,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue(documents);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -387,6 +406,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue(documents);
       correctionRepository.findAll.mockResolvedValue(corrections);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -403,6 +423,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue([]);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({ fromDate, toDate });
 
@@ -418,6 +439,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue([]);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 
@@ -445,6 +467,7 @@ describe('CalculateMetricsUseCase', () => {
       documentRepository.findAll.mockResolvedValue(documents);
       correctionRepository.findAll.mockResolvedValue([]);
       extractionRepository.findAllByDocumentIds.mockResolvedValue([]);
+      thresholdRepository.findAll.mockResolvedValue({});
 
       const result = await useCase.execute({});
 

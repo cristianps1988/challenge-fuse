@@ -12,6 +12,8 @@ describe('UpdateThresholdsUseCase', () => {
       save: jest.fn(),
       findAll: jest.fn(),
       findByType: jest.fn(),
+      findClassificationThreshold: jest.fn().mockResolvedValue(0.70),
+      saveClassificationThreshold: jest.fn(),
     };
 
     useCase = new UpdateThresholdsUseCase(thresholdRepository);

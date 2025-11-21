@@ -3,6 +3,7 @@ import { Correction } from '@/backend/domain/entities/Correction.Entity';
 import { DocumentType } from '@/backend/domain/value-objects/DocumentType.ValueObject';
 import { db } from './database';
 import { logger } from '@/backend/infrastructure/logger';
+import type { JsonlCorrectionLog } from './JsonlCorrectionLog';
 
 interface CorrectionRow {
   id: string;
@@ -31,6 +32,8 @@ interface SerializedFieldCorrections {
 }
 
 export class SqliteCorrectionRepository implements CorrectionRepository {
+  constructor(private readonly correctionLog: JsonlCorrectionLog) {}
+
   async save(correction: Correction): Promise<void> {
     try {
       const stmt = db.prepare(`
@@ -53,9 +56,31 @@ export class SqliteCorrectionRepository implements CorrectionRepository {
         correction.getNotes()
       );
 
-      logger.info('Correction saved', {
+      logger.info('Correction saved to SQLite', {
         correctionId: correction.getId(),
         documentId: correction.getDocumentId(),
+      });
+
+      await this.correctionLog.append({
+        correctionId: correction.getId(),
+        documentId: correction.getDocumentId(),
+        documentType: correction.getOriginalType()?.getValue() ?? 'unknown',
+        corrections: {
+          type: correction.getCorrectedType()
+            ? {
+                from: correction.getOriginalType()?.getValue() ?? 'unknown',
+                to: correction.getCorrectedType()!.getValue(),
+              }
+            : undefined,
+          fields: correction.getFieldCorrections().map(fc => ({
+            field: fc.fieldName,
+            from: fc.originalValue,
+            to: fc.correctedValue,
+          })),
+        },
+        correctedBy: correction.getCorrectedBy(),
+        correctedAt: correction.getCorrectedAt().toISOString(),
+        notes: correction.getNotes() ?? undefined,
       });
     } catch (error) {
       logger.error('Failed to save correction', {

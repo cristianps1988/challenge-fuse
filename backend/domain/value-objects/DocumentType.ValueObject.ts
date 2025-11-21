@@ -34,6 +34,10 @@ export class DocumentType {
     return new DocumentType(DocumentTypeConstants.ARTICLES_OF_INCORPORATION);
   }
 
+  static unknown(): DocumentType {
+    return new DocumentType(DocumentTypeConstants.UNKNOWN);
+  }
+
   getValue(): DocumentTypeValue {
     return this.value;
   }
@@ -60,5 +64,9 @@ export class DocumentType {
 
   isArticlesOfIncorporation(): boolean {
     return this.value === DocumentTypeConstants.ARTICLES_OF_INCORPORATION;
+  }
+
+  isUnknown(): boolean {
+    return this.value === DocumentTypeConstants.UNKNOWN;
   }
 }

@@ -1,6 +1,6 @@
 import type { ExtractionRepository } from '@/backend/application/ports/ExtractionRepository';
 import { Extraction } from '@/backend/domain/entities/Extraction.Entity';
-import { FieldValue } from '@/backend/domain/value-objects/FieldValue.ValueObject';
+import { FieldValue, type BoundingBox } from '@/backend/domain/value-objects/FieldValue.ValueObject';
 import { Confidence } from '@/backend/domain/value-objects/Confidence.ValueObject';
 import { db } from './database';
 import { logger } from '@/backend/infrastructure/logger';
@@ -17,6 +17,8 @@ interface SerializedField {
   name: string;
   value: string | number | boolean | null;
   confidence: number;
+  page?: number | null;
+  boundingBox?: BoundingBox | null;
 }
 
 interface SerializedFields {
@@ -198,6 +200,8 @@ export class SqliteExtractionRepository implements ExtractionRepository {
         name: fieldValue.getName(),
         value: fieldValue.getValue(),
         confidence: fieldValue.getConfidence().getValue(),
+        page: fieldValue.getPage(),
+        boundingBox: fieldValue.getBoundingBox(),
       };
     }
 
@@ -214,7 +218,9 @@ export class SqliteExtractionRepository implements ExtractionRepository {
         FieldValue.create(
           field.name,
           field.value,
-          Confidence.create(field.confidence)
+          Confidence.create(field.confidence),
+          field.page ?? null,
+          field.boundingBox ?? null
         )
       );
     }

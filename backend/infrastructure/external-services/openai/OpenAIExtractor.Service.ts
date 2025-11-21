@@ -1,20 +1,25 @@
 import type { ExtractorService, ExtractionResult } from '@/backend/application/ports/ExtractorService';
 import type { DocumentTypeValue } from '@/backend/domain/document-types.constants';
+import type { LearningLoopService } from '@/backend/application/services/LearningLoop.Service';
 import { FieldValue } from '@/backend/domain/value-objects/FieldValue.ValueObject';
 import { Confidence } from '@/backend/domain/value-objects/Confidence.ValueObject';
 import { loadSchema } from '@/backend/domain/schemas';
 import { openai, OPENAI_MODEL } from './client';
 import { buildExtractionPrompt } from './prompts';
+import { retryWithExponentialBackoff, isRetriableError } from './retry-utils';
 import { logger } from '@/backend/infrastructure/logger';
 
 interface ExtractedField {
   value: string | number | boolean | null;
   confidence: number;
+  page?: number | null;
 }
 
 type ExtractedFields = Record<string, ExtractedField | null | string | number | boolean>;
 
 export class OpenAIExtractorService implements ExtractorService {
+  constructor(private readonly learningLoopService: LearningLoopService) {}
+
   async extract(
     fileBuffer: Buffer,
     documentType: DocumentTypeValue,
@@ -40,31 +45,38 @@ export class OpenAIExtractorService implements ExtractorService {
       uploadedFile = file;
       logger.debug('File uploaded successfully', { fileName, fileId: file.id });
 
-      const prompt = buildExtractionPrompt(documentType, schema);
+      const learningExamples = await this.learningLoopService.getFieldExtractionExamples(documentType, 3);
+      const prompt = buildExtractionPrompt(documentType, schema, learningExamples ? [learningExamples] : undefined);
 
-      const response = await openai.chat.completions.create({
-        model: OPENAI_MODEL,
-        messages: [
-          {
-            role: 'user',
-            content: [
+      const response = await retryWithExponentialBackoff(
+        async () => {
+          return await openai.chat.completions.create({
+            model: OPENAI_MODEL,
+            messages: [
               {
-                type: 'text',
-                text: prompt,
-              },
-              {
-                type: 'file',
-                file: {
-                  file_id: file.id,
-                },
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: prompt,
+                  },
+                  {
+                    type: 'file',
+                    file: {
+                      file_id: file.id,
+                    },
+                  },
+                ],
               },
             ],
-          },
-        ],
-        response_format: { type: 'json_object' },
-        max_tokens: 2000,
-        temperature: 0.1,
-      });
+            response_format: { type: 'json_object' },
+            max_tokens: 2000,
+            temperature: 0.1,
+          });
+        },
+        `OpenAI Extraction (${documentType})`,
+        { maxRetries: 2 }
+      );
 
       const content = response.choices[0]?.message?.content;
 
@@ -100,16 +112,19 @@ export class OpenAIExtractorService implements ExtractorService {
       };
     } catch (error) {
       const processingTimeMs = Date.now() - startTime;
+      const isRetriable = isRetriableError(error);
 
       logger.error('Extraction failed', {
         fileName,
         documentType,
         processingTimeMs,
+        retriable: isRetriable,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
 
-      throw new Error(`Extraction failed: ${error instanceof Error ? error.message : String(error)}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Extraction failed: ${errorMessage}${isRetriable ? ' (retriable error)' : ''}`);
     } finally {
       if (uploadedFile) {
         try {
@@ -132,7 +147,7 @@ export class OpenAIExtractorService implements ExtractorService {
       if (fieldData === null || fieldData === undefined) {
         fields.set(
           fieldName,
-          FieldValue.create(fieldName, null, Confidence.create(0.5))
+          FieldValue.create(fieldName, null, Confidence.create(0.5), null, null)
         );
         continue;
       }
@@ -142,9 +157,11 @@ export class OpenAIExtractorService implements ExtractorService {
           ? Confidence.create(fieldData.confidence)
           : Confidence.create(0.5);
 
+        const page = typeof fieldData.page === 'number' ? fieldData.page : null;
+
         fields.set(
           fieldName,
-          FieldValue.create(fieldName, fieldData.value, confidence)
+          FieldValue.create(fieldName, fieldData.value, confidence, page, null)
         );
       } else {
         const value = typeof fieldData === 'string' || typeof fieldData === 'number' || typeof fieldData === 'boolean'
@@ -153,7 +170,7 @@ export class OpenAIExtractorService implements ExtractorService {
 
         fields.set(
           fieldName,
-          FieldValue.create(fieldName, value, Confidence.create(0.5))
+          FieldValue.create(fieldName, value, Confidence.create(0.5), null, null)
         );
       }
     }

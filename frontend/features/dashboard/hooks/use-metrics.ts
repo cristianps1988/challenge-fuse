@@ -8,6 +8,13 @@ export interface ClassificationMetrics {
   confusionMatrix: Record<string, Record<string, number>>;
 }
 
+export interface ConfidenceHistogram {
+  bins: number[];
+  counts: number[];
+  average: number;
+  threshold: number;
+}
+
 export interface ExtractionMetrics {
   fieldExactMatchRates: Record<string, number>;
   fieldF1Scores: Record<string, number>;
@@ -18,6 +25,7 @@ export interface ExtractionMetrics {
     medium: number;
     low: number;
   };
+  confidenceByType: Record<string, ConfidenceHistogram>;
 }
 
 export interface OperationalMetrics {

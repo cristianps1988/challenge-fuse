@@ -4,6 +4,7 @@ export const DocumentType = {
   W9: 'w9',
   CERTIFICATE_OF_INSURANCE: 'certificate_of_insurance',
   ARTICLES_OF_INCORPORATION: 'articles_of_incorporation',
+  UNKNOWN: 'unknown',
 } as const;
 
 export type DocumentTypeValue = typeof DocumentType[keyof typeof DocumentType];
@@ -16,4 +17,5 @@ export const DocumentTypeLabel: Record<DocumentTypeValue, string> = {
   [DocumentType.W9]: 'W-9 Form',
   [DocumentType.CERTIFICATE_OF_INSURANCE]: 'Certificate of Insurance',
   [DocumentType.ARTICLES_OF_INCORPORATION]: 'Articles of Incorporation',
+  [DocumentType.UNKNOWN]: 'Unknown/Invalid',
 } as const;

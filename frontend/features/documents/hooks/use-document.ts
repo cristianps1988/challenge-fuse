@@ -4,6 +4,14 @@ interface FieldValue {
   name: string;
   value: string;
   confidence: number;
+  page: number | null;
+}
+
+interface ExtractedField {
+  name: string;
+  value: string | null;
+  confidence: number;
+  page: number | null;
 }
 
 interface Extraction {
@@ -57,7 +65,33 @@ export function useDocument(documentId: string) {
       }
 
       const data = await response.json();
-      setDocument(data);
+
+      const transformedData: Document = {
+        id: data.id,
+        filename: data.fileName,
+        documentType: data.documentType,
+        status: data.status,
+        classificationConfidence: data.classificationConfidence,
+        createdAt: data.createdAt,
+        updatedAt: data.processedAt || data.createdAt,
+        extraction: data.extractedFields && data.extractedFields.length > 0 ? {
+          id: data.id,
+          fields: data.extractedFields.reduce((acc: Record<string, FieldValue>, field: ExtractedField) => {
+            acc[field.name] = {
+              name: field.name,
+              value: field.value ?? '',
+              confidence: field.confidence,
+              page: field.page ?? null,
+            };
+            return acc;
+          }, {}),
+          overallConfidence: data.overallExtractionConfidence,
+          extractedAt: data.processedAt || data.createdAt,
+        } : null,
+        corrections: data.corrections || [],
+      };
+
+      setDocument(transformedData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch document';
       setError(errorMessage);

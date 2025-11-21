@@ -1,8 +1,10 @@
 import type { ClassifierService, ClassificationResult } from '@/backend/application/ports/ClassifierService';
 import { Confidence } from '@/backend/domain/value-objects/Confidence.ValueObject';
 import type { DocumentTypeValue } from '@/backend/domain/document-types.constants';
+import type { LearningLoopService } from '@/backend/application/services/LearningLoop.Service';
 import { openai, OPENAI_VISION_MODEL } from './client';
 import { buildClassificationPrompt } from './prompts';
+import { retryWithExponentialBackoff, isRetriableError } from './retry-utils';
 import { logger } from '@/backend/infrastructure/logger';
 
 interface OpenAIClassificationResponse {
@@ -12,6 +14,8 @@ interface OpenAIClassificationResponse {
 }
 
 export class OpenAIClassifierService implements ClassifierService {
+  constructor(private readonly learningLoopService: LearningLoopService) {}
+
   async classify(fileBuffer: Buffer, fileName: string): Promise<ClassificationResult> {
     const startTime = Date.now();
     let uploadedFile: { id: string } | null = null;
@@ -31,31 +35,38 @@ export class OpenAIClassifierService implements ClassifierService {
       uploadedFile = file;
       logger.debug('File uploaded successfully', { fileName, fileId: file.id });
 
-      const prompt = buildClassificationPrompt();
+      const learningExamples = await this.learningLoopService.getClassificationExamples(3);
+      const prompt = buildClassificationPrompt(learningExamples ? [learningExamples] : undefined);
 
-      const response = await openai.chat.completions.create({
-        model: OPENAI_VISION_MODEL,
-        messages: [
-          {
-            role: 'user',
-            content: [
+      const response = await retryWithExponentialBackoff(
+        async () => {
+          return await openai.chat.completions.create({
+            model: OPENAI_VISION_MODEL,
+            messages: [
               {
-                type: 'text',
-                text: prompt,
-              },
-              {
-                type: 'file',
-                file: {
-                  file_id: file.id,
-                },
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: prompt,
+                  },
+                  {
+                    type: 'file',
+                    file: {
+                      file_id: file.id,
+                    },
+                  },
+                ],
               },
             ],
-          },
-        ],
-        response_format: { type: 'json_object' },
-        max_tokens: 500,
-        temperature: 0.1,
-      });
+            response_format: { type: 'json_object' },
+            max_tokens: 500,
+            temperature: 0.1,
+          });
+        },
+        'OpenAI Classification',
+        { maxRetries: 2 }
+      );
 
       const content = response.choices[0]?.message?.content;
 
@@ -81,15 +92,18 @@ export class OpenAIClassifierService implements ClassifierService {
       };
     } catch (error) {
       const latency = Date.now() - startTime;
+      const isRetriable = isRetriableError(error);
 
       logger.error('Classification failed', {
         fileName,
         latency,
+        retriable: isRetriable,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
 
-      throw new Error(`Classification failed: ${error instanceof Error ? error.message : String(error)}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Classification failed: ${errorMessage}${isRetriable ? ' (retriable error)' : ''}`);
     } finally {
       if (uploadedFile) {
         try {

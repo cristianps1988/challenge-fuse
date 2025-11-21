@@ -4,7 +4,6 @@ import { DocumentType } from '@/backend/domain/value-objects/DocumentType.ValueO
 import { Confidence } from '@/backend/domain/value-objects/Confidence.ValueObject';
 import {
   DocumentAlreadyProcessedError,
-  ValidationError,
 } from '@/backend/domain/errors/Domain.Error';
 
 describe('Document Entity', () => {
@@ -121,10 +120,14 @@ describe('Document Entity', () => {
       expect(reviewedAt!.getTime()).toBeLessThanOrEqual(afterReview.getTime());
     });
 
-    it('should throw error when marking non-review document as reviewed', () => {
+    it('should allow marking any document as reviewed for correction purposes', () => {
       const doc = Document.create('doc-1', 'test.pdf', '/path/test.pdf', 1024);
+      doc.classify(DocumentType.bankStatement(), Confidence.create(0.95));
 
-      expect(() => doc.markAsReviewed()).toThrow(ValidationError);
+      doc.markAsReviewed();
+
+      expect(doc.getStatus()).toBe(DocumentStatus.REVIEWED);
+      expect(doc.getReviewedAt()).not.toBeNull();
     });
   });
 
@@ -149,13 +152,15 @@ describe('Document Entity', () => {
       expect(doc.getType()).toBe(newType);
     });
 
-    it('should throw error when changing type for non-review document', () => {
+    it('should allow changing type for any document to enable corrections', () => {
       const doc = Document.create('doc-1', 'test.pdf', '/path/test.pdf', 1024);
       doc.classify(DocumentType.bankStatement(), Confidence.create(0.9));
+      const newType = DocumentType.governmentId();
 
-      expect(() => {
-        doc.changeType(DocumentType.governmentId());
-      }).toThrow(ValidationError);
+      doc.changeType(newType);
+
+      expect(doc.getType()).toBe(newType);
+      expect(doc.getStatus()).toBe(DocumentStatus.COMPLETED);
     });
   });
 

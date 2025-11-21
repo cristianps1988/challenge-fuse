@@ -43,6 +43,8 @@ export class ProcessDocumentUseCase {
     const documentType = DocumentType.fromString(classificationResult.documentType);
     const classificationConfidence = classificationResult.confidence;
 
+    const classificationThreshold = await this.thresholdRepository.findClassificationThreshold();
+
     const fileSize = dto.fileBuffer.length;
     const document = Document.create(
       uuidv4(),
@@ -51,7 +53,12 @@ export class ProcessDocumentUseCase {
       fileSize
     );
 
-    document.classify(documentType, classificationConfidence);
+    document.classify(documentType, classificationConfidence, classificationThreshold);
+
+    if (document.getStatus() === 'rejected') {
+      await this.documentRepository.save(document);
+      return this.buildRejectedResponse(document);
+    }
 
     const extractionResult = await this.extractorService.extract(
       dto.fileBuffer,
@@ -80,44 +87,43 @@ export class ProcessDocumentUseCase {
       calibrationResult.calibratedFields
     );
 
-    const threshold = await this.thresholdRepository.findByType(classificationResult.documentType);
-    const effectiveThreshold = threshold ?? 0.85;
+    const extractionThreshold = await this.thresholdRepository.findByType(classificationResult.documentType);
+    const effectiveExtractionThreshold = extractionThreshold ?? 0.85;
 
-    logger.debug('Applying threshold for document type', {
+    logger.debug('Applying thresholds', {
       documentId: document.getId(),
       documentType: classificationResult.documentType,
-      threshold: effectiveThreshold,
+      classificationThreshold,
+      extractionThreshold: effectiveExtractionThreshold,
       classificationConfidence: document.getClassificationConfidence()?.getValue(),
       extractionConfidence: calibrationResult.overallConfidence.getValue(),
       criticalFieldsConfidence: calibrationResult.calibrationDetails.criticalFieldsConfidence,
     });
 
-    const classificationBelowThreshold = document.requiresReview(effectiveThreshold);
-    const extractionBelowThreshold = calibrationResult.overallConfidence.getValue() < effectiveThreshold;
+    const extractionBelowThreshold = calibrationResult.overallConfidence.getValue() < effectiveExtractionThreshold;
     const criticalFieldsBelowThreshold = this.confidenceCalibrator.hasCriticalFieldsBelowThreshold(
       calibrationResult.calibratedFields,
       classificationResult.documentType,
-      effectiveThreshold
+      effectiveExtractionThreshold
     );
 
-    if (classificationBelowThreshold || extractionBelowThreshold || criticalFieldsBelowThreshold) {
+    if (extractionBelowThreshold || criticalFieldsBelowThreshold) {
       document.markAsNeedsReview();
 
       const reasons = [];
-      if (classificationBelowThreshold) reasons.push('classification confidence below threshold');
       if (extractionBelowThreshold) reasons.push('extraction confidence below threshold');
       if (criticalFieldsBelowThreshold) reasons.push('critical fields below threshold');
 
       logger.info('Document marked for review', {
         documentId: document.getId(),
         reasons,
-        threshold: effectiveThreshold,
+        extractionThreshold: effectiveExtractionThreshold,
       });
     } else {
       document.markAsCompleted();
       logger.info('Document auto-approved', {
         documentId: document.getId(),
-        threshold: effectiveThreshold,
+        extractionThreshold: effectiveExtractionThreshold,
       });
     }
 
@@ -130,7 +136,7 @@ export class ProcessDocumentUseCase {
       document,
       extraction,
       processingTimeMs,
-      effectiveThreshold
+      classificationThreshold
     );
   }
 
@@ -138,7 +144,7 @@ export class ProcessDocumentUseCase {
     document: Document,
     extraction: Extraction,
     processingTimeMs: number,
-    threshold: number
+    classificationThreshold: number
   ): ProcessDocumentResponse {
     const extractedFields: ExtractedField[] = this.mapFields(extraction.getFields());
 
@@ -155,7 +161,7 @@ export class ProcessDocumentUseCase {
       extractedFields,
       overallExtractionConfidence: extraction.getOverallConfidence().getValue(),
       processingTimeMs,
-      requiresReview: document.requiresReview(threshold),
+      requiresReview: document.requiresReview(classificationThreshold),
       createdAt: document.getUploadedAt(),
     };
   }
@@ -182,5 +188,24 @@ export class ProcessDocumentUseCase {
       return 'date';
     }
     return 'string';
+  }
+
+  private buildRejectedResponse(document: Document): ProcessDocumentResponse {
+    const documentType = document.getType();
+    const classificationConfidence = document.getClassificationConfidence();
+
+    return {
+      documentId: document.getId(),
+      fileName: document.getFileName(),
+      filePath: document.getFilePath(),
+      documentType: (documentType?.getValue() ?? 'unknown') as DocumentTypeValue,
+      classificationConfidence: classificationConfidence?.getValue() ?? 0,
+      status: document.getStatus(),
+      extractedFields: [],
+      overallExtractionConfidence: 0,
+      processingTimeMs: 0,
+      requiresReview: false,
+      createdAt: document.getUploadedAt(),
+    };
   }
 }

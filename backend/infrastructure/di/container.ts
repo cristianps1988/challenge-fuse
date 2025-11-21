@@ -2,6 +2,7 @@ import { SqliteDocumentRepository } from '@/backend/infrastructure/persistence/S
 import { SqliteExtractionRepository } from '@/backend/infrastructure/persistence/SqliteExtraction.Repository';
 import { SqliteCorrectionRepository } from '@/backend/infrastructure/persistence/SqliteCorrection.Repository';
 import { SqliteThresholdRepository } from '@/backend/infrastructure/persistence/SqliteThreshold.Repository';
+import { SqliteSettingsRepository } from '@/backend/infrastructure/persistence/SqliteSettings.Repository';
 import { OpenAIClassifierService } from '@/backend/infrastructure/external-services/openai/OpenAIClassifier.Service';
 import { OpenAIExtractorService } from '@/backend/infrastructure/external-services/openai/OpenAIExtractor.Service';
 import { FileSystemStorageService } from '@/backend/infrastructure/external-services/storage/FileSystemStorage.Service';
@@ -11,6 +12,8 @@ import { GetDocumentUseCase } from '@/backend/application/use-cases/GetDocument/
 import { CorrectDocumentUseCase } from '@/backend/application/use-cases/CorrectDocument/CorrectDocument.UseCase';
 import { CalculateMetricsUseCase } from '@/backend/application/use-cases/CalculateMetrics/CalculateMetrics.UseCase';
 import { UpdateThresholdsUseCase } from '@/backend/application/use-cases/UpdateThresholds/UpdateThresholds.UseCase';
+import { GetSettingsUseCase } from '@/backend/application/use-cases/GetSettings/GetSettings.UseCase';
+import { UpdateSettingsUseCase } from '@/backend/application/use-cases/UpdateSettings/UpdateSettings.UseCase';
 import { PipelineOrchestratorService } from '@/backend/application/services/PipelineOrchestrator.Service';
 import { LearningLoopService } from '@/backend/application/services/LearningLoop.Service';
 import { DocumentController } from '@/backend/infrastructure/api/controllers/Document.Controller';
@@ -18,19 +21,21 @@ import { DocumentController } from '@/backend/infrastructure/api/controllers/Doc
 class Container {
   private documentRepository = new SqliteDocumentRepository();
   private extractionRepository = new SqliteExtractionRepository();
-  private correctionRepository = new SqliteCorrectionRepository();
   private thresholdRepository = new SqliteThresholdRepository();
+  private settingsRepository = new SqliteSettingsRepository();
 
-  private classifierService = new OpenAIClassifierService();
-  private extractorService = new OpenAIExtractorService();
   private storageService = new FileSystemStorageService();
 
   private correctionLog = new JsonlCorrectionLog();
+  private correctionRepository = new SqliteCorrectionRepository(this.correctionLog);
 
   private learningLoopService = new LearningLoopService(
     this.correctionRepository,
     this.documentRepository
   );
+
+  private classifierService = new OpenAIClassifierService(this.learningLoopService);
+  private extractorService = new OpenAIExtractorService(this.learningLoopService);
 
   private pipelineOrchestrator = new PipelineOrchestratorService(
     this.classifierService,
@@ -68,13 +73,26 @@ class Container {
     return new CalculateMetricsUseCase(
       this.documentRepository,
       this.extractionRepository,
-      this.correctionRepository
+      this.correctionRepository,
+      this.thresholdRepository
     );
   }
 
   getUpdateThresholdsUseCase(): UpdateThresholdsUseCase {
     return new UpdateThresholdsUseCase(
       this.thresholdRepository
+    );
+  }
+
+  getGetSettingsUseCase(): GetSettingsUseCase {
+    return new GetSettingsUseCase(
+      this.settingsRepository
+    );
+  }
+
+  getUpdateSettingsUseCase(): UpdateSettingsUseCase {
+    return new UpdateSettingsUseCase(
+      this.settingsRepository
     );
   }
 
@@ -100,6 +118,10 @@ class Container {
 
   getThresholdRepository() {
     return this.thresholdRepository;
+  }
+
+  getSettingsRepository() {
+    return this.settingsRepository;
   }
 
   getStorageService() {

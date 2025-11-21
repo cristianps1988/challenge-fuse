@@ -72,10 +72,11 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ClassificationMetrics metrics={metrics.classification} />
-        <ExtractionMetrics metrics={metrics.extraction} />
       </div>
+
+      <ExtractionMetrics metrics={metrics.extraction} />
 
       <OperationalMetrics metrics={metrics.operational} />
     </div>

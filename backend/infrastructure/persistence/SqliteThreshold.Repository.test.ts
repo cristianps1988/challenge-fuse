@@ -42,8 +42,13 @@ describe('SqliteThresholdRepository', () => {
       await repository.save(thresholds);
 
       const found = await repository.findAll();
-      expect(found).toEqual(thresholds);
-      expect(Object.keys(found)).toHaveLength(5);
+      expect(found[DocumentType.BANK_STATEMENT]).toBe(0.91);
+      expect(found[DocumentType.GOVERNMENT_ID]).toBe(0.93);
+      expect(found[DocumentType.W9]).toBe(0.88);
+      expect(found[DocumentType.CERTIFICATE_OF_INSURANCE]).toBe(0.92);
+      expect(found[DocumentType.ARTICLES_OF_INCORPORATION]).toBe(0.87);
+      expect((found as Record<string, number>)['classification']).toBe(0.70);
+      expect(Object.keys(found)).toHaveLength(6);
     });
 
     it('should update existing thresholds on conflict', async () => {
@@ -85,12 +90,13 @@ describe('SqliteThresholdRepository', () => {
       const thresholds = await repository.findAll();
 
       // Default values from schema.sql
+      expect((thresholds as Record<string, number>)['classification']).toBe(0.70);
       expect(thresholds[DocumentType.BANK_STATEMENT]).toBe(0.85);
       expect(thresholds[DocumentType.GOVERNMENT_ID]).toBe(0.90);
       expect(thresholds[DocumentType.W9]).toBe(0.85);
       expect(thresholds[DocumentType.CERTIFICATE_OF_INSURANCE]).toBe(0.80);
       expect(thresholds[DocumentType.ARTICLES_OF_INCORPORATION]).toBe(0.80);
-      expect(Object.keys(thresholds)).toHaveLength(5);
+      expect(Object.keys(thresholds)).toHaveLength(6);
     });
 
     it('should return all saved thresholds', async () => {

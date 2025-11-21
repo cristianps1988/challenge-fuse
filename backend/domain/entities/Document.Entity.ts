@@ -3,7 +3,6 @@ import { DocumentType } from '@/backend/domain/value-objects/DocumentType.ValueO
 import { Confidence } from '@/backend/domain/value-objects/Confidence.ValueObject';
 import {
   DocumentAlreadyProcessedError,
-  ValidationError,
 } from '@/backend/domain/errors/Domain.Error';
 
 export class Document {
@@ -66,22 +65,27 @@ export class Document {
     );
   }
 
-  classify(type: DocumentType, confidence: Confidence): void {
+  classify(type: DocumentType, confidence: Confidence, classificationThreshold: number): void {
     if (this.isCompleted() || this.isReviewed()) {
       throw new DocumentAlreadyProcessedError(this.id);
     }
 
     this.type = type;
     this.classificationConfidence = confidence;
-    this.updateStatusAfterClassification();
+    this.updateStatusAfterClassification(classificationThreshold);
   }
 
-  private updateStatusAfterClassification(): void {
-    if (!this.classificationConfidence) {
+  private updateStatusAfterClassification(classificationThreshold: number): void {
+    if (!this.classificationConfidence || !this.type) {
       return;
     }
 
-    if (this.classificationConfidence.isLow(0.60)) {
+    if (this.type.isUnknown()) {
+      this.status = DocumentStatus.REJECTED;
+      return;
+    }
+
+    if (this.classificationConfidence.isLow(classificationThreshold)) {
       this.status = DocumentStatus.NEEDS_REVIEW;
     } else {
       this.status = DocumentStatus.COMPLETED;
@@ -98,12 +102,6 @@ export class Document {
   }
 
   markAsReviewed(): void {
-    if (!this.isNeedsReview()) {
-      throw new ValidationError('Document must be in needs_review status to be reviewed', {
-        currentStatus: this.status,
-      });
-    }
-
     this.status = DocumentStatus.REVIEWED;
     this.reviewedAt = new Date();
   }
@@ -113,12 +111,6 @@ export class Document {
   }
 
   changeType(newType: DocumentType): void {
-    if (!this.isNeedsReview()) {
-      throw new ValidationError('Can only change type for documents that need review', {
-        currentStatus: this.status,
-      });
-    }
-
     this.type = newType;
   }
 
