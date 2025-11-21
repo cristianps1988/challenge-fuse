@@ -1,9 +1,8 @@
 export function getEnv() {
-  const { OPENAI_API_KEY, 
-    DATABASE_PATH, 
-    CORRECTIONS_LOG_PATH, 
-    UPLOADS_DIR, 
-    MAX_FILE_SIZE_MB,
+  const { OPENAI_API_KEY,
+    DATABASE_PATH,
+    CORRECTIONS_LOG_PATH,
+    UPLOADS_DIR,
     LOG_LEVEL,
     NODE_ENV,
   } = process.env;
@@ -12,7 +11,6 @@ export function getEnv() {
     DATABASE_PATH,
     CORRECTIONS_LOG_PATH,
     UPLOADS_DIR,
-    MAX_FILE_SIZE_MB,
     LOG_LEVEL,
     NODE_ENV,
   };

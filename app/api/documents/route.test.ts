@@ -11,11 +11,6 @@ jest.mock('@/backend/infrastructure/logger', () => ({
 jest.mock('@/backend/infrastructure/external-services/openai/client', () => ({
   openai: {},
 }));
-jest.mock('@/backend/infrastructure/config/env', () => ({
-  getEnv: () => ({
-    MAX_FILE_SIZE_MB: '10',
-  }),
-}));
 
 import { NextRequest } from 'next/server';
 import { GET, POST } from './route';
@@ -131,13 +126,22 @@ describe('GET /api/documents', () => {
 
 describe('POST /api/documents', () => {
   let mockUseCase: any;
+  let mockSettingsRepository: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseCase = {
       execute: jest.fn(),
     };
+    mockSettingsRepository = {
+      findByKey: jest.fn().mockResolvedValue({
+        key: 'max_file_size_mb',
+        value: '10',
+        type: 'number' as const,
+      }),
+    };
     (container.getProcessDocumentUseCase as jest.Mock).mockReturnValue(mockUseCase);
+    (container.getSettingsRepository as jest.Mock).mockReturnValue(mockSettingsRepository);
   });
 
   it('should process a valid PDF file', async () => {
@@ -236,6 +240,8 @@ describe('POST /api/documents', () => {
 
     expect(response.status).toBe(400);
     expect(data.error).toContain('exceeds');
+    expect(data.error).toContain('10MB');
+    expect(mockSettingsRepository.findByKey).toHaveBeenCalledWith('max_file_size_mb');
     expect(mockUseCase.execute).not.toHaveBeenCalled();
   });
 

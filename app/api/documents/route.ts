@@ -3,9 +3,6 @@ import { container } from '@/backend/infrastructure/di/container';
 import { logger } from '@/backend/infrastructure/logger';
 import type { DocumentStatusValue } from '@/backend/domain/document-status.constants';
 import type { DocumentTypeValue } from '@/backend/domain/document-types.constants';
-import { getEnv } from '@/backend/infrastructure/config/env';
-
-const { MAX_FILE_SIZE_MB } = getEnv();
 
 export async function GET(request: NextRequest) {
   try {
@@ -94,10 +91,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const maxSize = parseInt(MAX_FILE_SIZE_MB || '10') * 1024 * 1024;
+    const settingsRepository = container.getSettingsRepository();
+    const maxFileSizeSetting = await settingsRepository.findByKey('max_file_size_mb');
+    const maxFileSizeMb = maxFileSizeSetting ? parseFloat(maxFileSizeSetting.value) : 10;
+    const maxSize = maxFileSizeMb * 1024 * 1024;
+
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: `File size exceeds ${MAX_FILE_SIZE_MB || '10'}MB limit` },
+        { error: `File size exceeds ${maxFileSizeMb}MB limit` },
         { status: 400 }
       );
     }

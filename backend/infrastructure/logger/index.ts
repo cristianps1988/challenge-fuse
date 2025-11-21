@@ -1,5 +1,6 @@
 import pino from 'pino';
 import { getEnv } from '@/backend/infrastructure/config/env';
+import { maskLogContext } from './masking';
 
 const { LOG_LEVEL, NODE_ENV } = getEnv();
 const isDevelopment = NODE_ENV === 'development';
@@ -21,28 +22,32 @@ const pinoLogger = pino({
 export const logger = {
   info: (message: string, context?: Record<string, unknown>) => {
     if (context) {
-      pinoLogger.info(context, message);
+      const maskedContext = maskLogContext(context);
+      pinoLogger.info(maskedContext, message);
     } else {
       pinoLogger.info(message);
     }
   },
   error: (message: string, context?: Record<string, unknown>) => {
     if (context) {
-      pinoLogger.error(context, message);
+      const maskedContext = maskLogContext(context);
+      pinoLogger.error(maskedContext, message);
     } else {
       pinoLogger.error(message);
     }
   },
   warn: (message: string, context?: Record<string, unknown>) => {
     if (context) {
-      pinoLogger.warn(context, message);
+      const maskedContext = maskLogContext(context);
+      pinoLogger.warn(maskedContext, message);
     } else {
       pinoLogger.warn(message);
     }
   },
   debug: (message: string, context?: Record<string, unknown>) => {
     if (context) {
-      pinoLogger.debug(context, message);
+      const maskedContext = maskLogContext(context);
+      pinoLogger.debug(maskedContext, message);
     } else {
       pinoLogger.debug(message);
     }
@@ -50,3 +55,12 @@ export const logger = {
 };
 
 export type Logger = typeof logger;
+
+export {
+  maskValue,
+  maskObject,
+  maskExtractedFields,
+  maskLogContext,
+  maskSensitivePatterns,
+  isSensitiveField,
+} from './masking';
